@@ -1,4 +1,4 @@
-using DocumentProcessor.Web.Components;
+﻿using DocumentProcessor.Web.Components;
 using DocumentProcessor.Web.Data;
 using DocumentProcessor.Web.Services;
 using Microsoft.EntityFrameworkCore;
@@ -42,8 +42,8 @@ try
             var host = secretsService.GetFieldFromSecret(secretJson, "host");
             var port = secretsService.GetFieldFromSecret(secretJson, "port");
             var dbname = secretsService.GetFieldFromSecret(secretJson, "dbname");
-            connectionString = $"Server={host},{port};Database={dbname};User Id={username};Password={password};TrustServerCertificate=true;Encrypt=true";
-            dbInfo.DatabaseType = "SQL Server"; dbInfo.SecretName = "MAM319 RDS MSSQL"; dbInfo.HostAddress = $"{host}:{port}";
+            connectionString = $"Host={host};Port={port};Database={dbname};Username={username};Password={password};SSL Mode=Require;Trust Server Certificate=true";
+            dbInfo.DatabaseType = "PostgreSQL"; dbInfo.SecretName = "MAM319 RDS MSSQL"; dbInfo.HostAddress = $"{host}:{port}";
         }
         else throw new Exception("Failed to retrieve database credentials from Secrets Manager");
     }
@@ -52,11 +52,11 @@ catch (Exception ex)
 {
     Console.WriteLine($"Warning: Could not load connection string from AWS Secrets Manager: {ex.Message}");
     Console.WriteLine("Falling back to appsettings.json connection string");
-    connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? "Server=localhost;Database=DocumentProcessor;Integrated Security=true;TrustServerCertificate=True;";
-    dbInfo.DatabaseType = "SQL Server (Local)"; dbInfo.SecretName = "appsettings.json"; dbInfo.HostAddress = "localhost";
+    connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? "Host=localhost;Port=5432;Database=postgres;Username=postgres;Password=postgres;";
+    dbInfo.DatabaseType = "PostgreSQL (Local)"; dbInfo.SecretName = "appsettings.json"; dbInfo.HostAddress = "localhost";
 }
 
-builder.Services.AddDbContext<AppDbContext>(o => o.UseSqlServer(connectionString));
+builder.Services.AddDbContext<AppDbContext>(o => o.UseNpgsql(connectionString));
 builder.Services.AddSingleton(dbInfo);
 builder.Services.AddScoped<FileStorageService>();
 builder.Services.AddScoped<AIService>();
